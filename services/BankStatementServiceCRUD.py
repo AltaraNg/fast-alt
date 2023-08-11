@@ -24,4 +24,6 @@ def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate)
         db.refresh(db_bank_statement)
         return db_bank_statement
     except ValidationError as validation_error:
-        print(validation_error)
+        raise validation_error
+    except Exception as e:
+        raise e
