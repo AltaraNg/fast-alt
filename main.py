@@ -48,8 +48,9 @@ def upload_bank_statement(
         db: Session = Depends(get_db)
 ):
     executor = BankStatementExecutor()
-    print(executor.BANK_STATEMENTS_CHOICES)
-    result = executor.execute(int(bank_statement_choice), bank_statement_pdf.file)
+
+    result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
+                              min_salary=min_salary, max_salary=max_salary)
     bank_statement_excel_file_path = result.excel_file_path
     bank_statement_excel_file_name = os.path.basename(bank_statement_excel_file_path)
 

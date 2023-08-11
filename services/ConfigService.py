@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ConfigService(BaseSettings):
     app_name: str = "Awesome API"
-    app_env: str
+    app_env: str = "local"
 
     # APP MAILS
     app_admin_email: str = "naderounmu@altaracredit.com"
