@@ -1,5 +1,7 @@
 .vscode
+.idea
 .mypy_cache
 /venv
 .env
 /exports
+sql_app.db
