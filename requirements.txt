@@ -41,3 +41,4 @@ botocore~=1.31.22
 SQLAlchemy~=2.0.19
 pydantic_settings~=2.0.2
 fastapi_mail~=1.4.1
+python-multipart~=0.0.6
