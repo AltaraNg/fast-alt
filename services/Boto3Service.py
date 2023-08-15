@@ -1,5 +1,5 @@
 from boto3 import client
-from services.ConfigService import config
+from config.ConfigService import config
 from botocore.client import BaseClient
 
 

@@ -33,6 +33,8 @@ class ConfigService(BaseSettings):
     aws_bucket: str
     aws_url: str
 
+    template_folder: str = './templates/email'
+
     model_config = SettingsConfigDict(env_file=".env")
 
 

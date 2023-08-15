@@ -6,7 +6,7 @@ import models.bank_statement_model
 from schemas.bank_statement_schema import BankStatementCreate, BankStatement
 from config.database import SessionLocal, engine
 from sqlalchemy.orm import Session
-import os
+from starlette.responses import JSONResponse
 
 from services.FileService import FileService
 from services.BankStatementServiceCRUD import create_bank_statement
@@ -36,7 +36,10 @@ def get_bank_statement_choices():
     bank_statement_choices = []
     for choice in BankStatementExecutor.BANK_STATEMENTS_CHOICES:
         bank_statement_choices.append({"key": choice, "name": choices[choice] + " Bank"})
-    return bank_statement_choices
+    return JSONResponse(
+        status_code=200,
+        content=bank_statement_choices
+    )
 
 
 @app.post("/upload")
@@ -46,7 +49,7 @@ def upload_bank_statement(
         min_salary: Annotated[float, Form()] = 10,
         max_salary: Annotated[float, Form()] = 100,
         db: Session = Depends(get_db)
-):
+) -> JSONResponse:
     try:
         executor = BankStatementExecutor()
         print(min_salary, max_salary)
@@ -72,11 +75,21 @@ def upload_bank_statement(
                 end_date=result.period.get('to_date')
             )
         )
-        return {"data": bank_statement, "message": "Bank statement successfully processed", "status": "success"}
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": bank_statement,
+                "message": "Bank statement successfully processed",
+                "status": "success"
+            },
+
+        )
     except Exception as e:
         logging.exception(e)
-        return {
-            "data": None,
-            "status": "failed",
-            "message": str(e),
-        }
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "failed",
+                "message": str(e),
+            }
+        )
