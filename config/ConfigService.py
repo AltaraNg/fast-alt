@@ -1,4 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class ConfigService(BaseSettings):
@@ -33,7 +36,8 @@ class ConfigService(BaseSettings):
     aws_bucket: str
     aws_url: str
 
-    mail_template_folder: str = '../templates/email'
+    base_dir: str = BASE_DIR
+    template_dir: str = BASE_DIR + "/templates"
 
     model_config = SettingsConfigDict(env_file=".env")
 
