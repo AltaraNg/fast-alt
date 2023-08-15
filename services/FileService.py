@@ -1,9 +1,8 @@
 import logging
-import boto3
 from botocore.exceptions import ClientError
 import os
 from services.Boto3Service import Boto3Service
-from services.ConfigService import config
+from config.ConfigService import config
 
 
 class FileService:
