@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, Form, UploadFile, Depends
 from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
 import logging
+import os
+
 import models.bank_statement_model
 from schemas.bank_statement_schema import BankStatementCreate, BankStatement
 from config.database import SessionLocal, engine
@@ -97,6 +99,8 @@ def upload_bank_statement(
 
 
 @app.get('/send-email/asynchronous')
-def send_mail():
-    MailService.send_email_async("Testing", "tadewuyi@altaracredit.com", {'title': 'Hello World', 'name': 'John Doe'})
+async def send_mail():
+    await MailService.send_email_async("Testing", "tadewuyi@altaracredit.com",
+                                       {'title': 'Hello World', 'name': 'John Doe'})
+
     return 'Success'
