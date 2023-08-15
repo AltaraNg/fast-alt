@@ -10,6 +10,7 @@ from starlette.responses import JSONResponse
 
 from services.FileService import FileService
 from services.BankStatementServiceCRUD import create_bank_statement
+from services.MailService import MailService
 
 models.bank_statement_model.Base.metadata.create_all(bind=engine)
 
@@ -93,3 +94,9 @@ def upload_bank_statement(
                 "message": str(e),
             }
         )
+
+
+@app.get('/send-email/asynchronous')
+def send_mail():
+    MailService.send_email_async("Testing", "tadewuyi@altaracredit.com", {'title': 'Hello World', 'name': 'John Doe'})
+    return 'Success'
