@@ -46,7 +46,7 @@ def get_bank_statement_choices():
 
 
 @app.post("/upload")
-def upload_bank_statement(
+async def upload_bank_statement(
         bank_statement_pdf: Annotated[UploadFile, File()],
         bank_statement_choice: Annotated[str, Form()],
         min_salary: Annotated[float, Form()] = 10,
@@ -55,7 +55,7 @@ def upload_bank_statement(
 ) -> JSONResponse:
     try:
         executor = BankStatementExecutor()
-        print(min_salary, max_salary)
+
         result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
                                   min_salary=min_salary, max_salary=max_salary)
         bank_statement_excel_response = FileService.upload_file(
@@ -88,7 +88,20 @@ def upload_bank_statement(
 
         )
     except Exception as e:
-        logging.exception(e)
+        bank_statement_name = executor.BANK_STATEMENTS_CHOICES.get(int(bank_statement_choice))
+
+        await MailService.send_email_async(
+            subject="Bank Statement Processing Failed",
+            email_to="tadewuyi@altaracredit.com",
+            body={
+                "bank_statement_name": bank_statement_name,
+                "min_salary": min_salary,
+                "max_salary": max_salary,
+                "file_name": bank_statement_pdf.filename
+            },
+            template="bank_statement_processing_failed",
+            attachment=bank_statement_pdf
+        )
         return JSONResponse(
             status_code=400,
             content={
@@ -100,7 +113,11 @@ def upload_bank_statement(
 
 @app.get('/send-email/asynchronous')
 async def send_mail():
-    await MailService.send_email_async("Testing", "tadewuyi@altaracredit.com",
-                                       {'title': 'Hello World', 'name': 'John Doe'})
+    await MailService.send_email_async(
+        subject="Testing",
+        email_to="tadewuyi@altaracredit.com",
+        body={'title': 'Hello World', 'name': 'John Doe'},
+        template="sample-email"
+    )
 
     return 'Success'
