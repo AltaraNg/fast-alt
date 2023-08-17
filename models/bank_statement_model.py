@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Date
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date
 from config.database import Base
 from datetime import datetime
 
@@ -18,3 +18,7 @@ class BankStatement(Base):
     end_date = Column(Date, nullable=True)
     created_at = Column(DateTime, nullable=True, default=datetime.now())
     updated_at = Column(DateTime, nullable=True, default=datetime.now())
+
+
+
+
