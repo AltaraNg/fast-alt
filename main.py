@@ -12,6 +12,7 @@ from services.FileService import FileService
 from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
+from fastapi.middleware.cors import CORSMiddleware
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -19,6 +20,13 @@ Page = Page.with_custom_options(
 models.bank_statement_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 add_pagination(app)
 
 
