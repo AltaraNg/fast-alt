@@ -18,7 +18,6 @@ Page = Page.with_custom_options(
 )
 models.bank_statement_model.Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI()
 add_pagination(app)
 
@@ -48,7 +47,7 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/bank-statement-choices")
+@app.get("/bank-statement-choices", description="Get all supported bank statement choices")
 def get_bank_statement_choices() -> JSONResponse:
     choices = BankStatementExecutor.BANK_STATEMENTS_CHOICES
     bank_statement_choices = []
@@ -60,7 +59,7 @@ def get_bank_statement_choices() -> JSONResponse:
     )
 
 
-@app.post("/bank_statement")
+@app.post("/bank_statement", description="Upload bank statement for processing")
 async def store(
         bank_statement_pdf: Annotated[UploadFile, File()],
         bank_statement_choice: Annotated[str, Form()],
@@ -138,7 +137,8 @@ async def store(
         )
 
 
-@app.get("/bank_statement/{bank_statement_id}")
+@app.get("/bank_statement/{bank_statement_id}",
+         description="Retrieve a single bank statement by passing bank statement id")
 def show(bank_statement_id: int = Path(title="The ID of the bank statement to get"),
          db: Session = Depends(get_db)):
     bank_statement = get_bank_statement(db, bank_statement_id)
@@ -153,7 +153,7 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
     )
 
 
-@app.get("/bank_statements")
+@app.get("/bank_statements", description="Get paginated processed bank statements")
 def index(db: Session = Depends(get_db)) -> Page[BankStatement]:
     bank_statements = all_bank_statements(db)
     return bank_statements
