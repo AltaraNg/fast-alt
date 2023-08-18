@@ -15,6 +15,8 @@ class BankStatementBase(BaseModel):
     start_date: str | datetime.date
     end_date: str | datetime.date
     repayment_capability: str | dict | list[dict] | None = []
+    average_monthly_balance: float | None = None
+    predicted_average_salary: float | None = None
 
 
 class BankStatementCreate(BankStatementBase):

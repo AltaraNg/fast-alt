@@ -14,16 +14,26 @@ class FileService:
         self.uploader = Boto3Service()
 
     @classmethod
+    def remove_file_from_dir(cls, path_to_file):
+        if not cls.file_exist(path_to_file):
+            raise FileExistsError
+        os.remove(path_to_file)
+
+    @classmethod
     def get_export_file_path(cls, file_path_within_exports):
         if file_path_within_exports is None:
             return None
-        print(file_path_within_exports)
         full_path = os.path.join(FileService.EXPORTS_FOLDER, file_path_within_exports)
+        if not cls.file_exist(full_path):
+            raise FileExistsError
         return full_path
+
+    @classmethod
+    def file_exist(cls, path_to_file):
+        return os.path.exists(path_to_file)
 
     @staticmethod
     def upload_file(file_path, object_name=None):
-        print(file_path)
         """Upload a file to an S3 bucket
 
             :param file_path:
@@ -46,5 +56,4 @@ class FileService:
             return {"file_url": file_url, "success": True}
         except ClientError as e:
             logging.error(e)
-            print(e)
             return {"file_url": None, "success": False}
