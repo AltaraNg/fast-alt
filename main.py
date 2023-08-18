@@ -107,6 +107,7 @@ async def store(
         )
         bank_statement_resource = BankStatement(
             id=bank_statement.id,
+            customer_id=bank_statement.customer_id,
             account_name=bank_statement.account_name,
             account_number=bank_statement.account_number,
             opening_balance=bank_statement.opening_balance,
