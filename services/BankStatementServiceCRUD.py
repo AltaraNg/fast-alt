@@ -17,6 +17,8 @@ Page = Page.with_custom_options(
 def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate):
     try:
         db_bank_statement = BankStatement(
+            customer_id=bank_statement_data.customer_id,
+            repayment_capability=bank_statement_data.repayment_capability,
             account_name=bank_statement_data.account_name,
             account_number=bank_statement_data.account_number,
             opening_balance=bank_statement_data.opening_balance,
@@ -42,7 +44,7 @@ def get_bank_statement(db: Session, bank_statement_id):
     item = db.query(BankStatement).filter(BankStatement.id == bank_statement_id).first()
     if item is None:
         raise NotFoundException(f"The provided bank statement id: {bank_statement_id} could not be found")
-    print(item.dict())
+    # print(item.dict())
     return item
 
 

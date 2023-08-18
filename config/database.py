@@ -14,14 +14,14 @@ else:
     database = config.db_database
     SQLALCHEMY_DATABASE_URL = URL.create(
         drivername="mysql+mysqlconnector",
-        username=config.db_username,
-        password=config.db_password,  # plain (unescaped) text
-        host=config.db_host,
-        database=config.db_database,
-        port=config.db_port
+        username=username,
+        password=password,  # plain (unescaped) text
+        host=host,
+        database=database,
+        port=port
     )
 
-
+print(SQLALCHEMY_DATABASE_URL)
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
 )

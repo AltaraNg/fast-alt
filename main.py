@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query
 from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
@@ -13,6 +15,7 @@ from services.BankStatementServiceCRUD import create_bank_statement, get_bank_st
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
+from config.ConfigService import config
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -69,6 +72,7 @@ def get_bank_statement_choices() -> JSONResponse:
 
 @app.post("/bank-statements", summary="Upload bank statement for processing")
 async def store(
+        customer_id: Annotated[int, Form()],
         bank_statement_pdf: Annotated[UploadFile, File()],
         bank_statement_choice: Annotated[int, Form()],
         min_salary: Annotated[float, Form()] = 10,
@@ -88,6 +92,7 @@ async def store(
         bank_statement = create_bank_statement(
             db,
             bank_statement_data=BankStatementCreate(
+                customer_id=customer_id,
                 account_name=result.account_name,
                 account_number=result.account_number,
                 opening_balance=result.opening_balance,
@@ -123,19 +128,22 @@ async def store(
             },
         )
     except Exception as e:
-        bank_statement_name = executor.BANK_STATEMENTS_CHOICES.get(int(bank_statement_choice))
-        await MailService.send_email_async(
-            subject="Bank Statement Processing Failed",
-            email_to="tadewuyi@altaracredit.com",
-            body={
-                "bank_statement_name": bank_statement_name,
-                "min_salary": min_salary,
-                "max_salary": max_salary,
-                "file_name": bank_statement_pdf.filename
-            },
-            template="bank_statement_processing_failed",
-            attachment=bank_statement_pdf
-        )
+        logging.error(e)
+        if config.app_env != 'local':
+            bank_statement_name = executor.BANK_STATEMENTS_CHOICES.get(int(bank_statement_choice))
+            await MailService.send_email_async(
+                subject="Bank Statement Processing Failed",
+                email_to="tadewuyi@altaracredit.com",
+                body={
+                    "actual_error": str(e),
+                    "bank_statement_name": bank_statement_name,
+                    "min_salary": min_salary,
+                    "max_salary": max_salary,
+                    "file_name": bank_statement_pdf.filename
+                },
+                template="bank_statement_processing_failed",
+                attachment=bank_statement_pdf
+            )
         return JSONResponse(
             status_code=400,
             content={
