@@ -14,7 +14,7 @@ class BankStatementBase(BaseModel):
     exported_bank_statement_file_url: str | None
     start_date: str | datetime.date
     end_date: str | datetime.date
-    repayment_capability: str | dict | list[dict] | None = [{'month_name': 'April', 'count': 10}, {'month_name': 'May', 'count': 1}, {'month_name': 'June', 'count': 3}, {'month_name': 'July', 'count': 10}]
+    repayment_capability: str | dict | list[dict] | None = []
 
 
 class BankStatementCreate(BankStatementBase):
