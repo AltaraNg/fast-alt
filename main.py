@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query
+from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query, BackgroundTasks
 from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
 import models.bank_statement_model
@@ -77,18 +77,20 @@ async def store(
         bank_statement_choice: Annotated[int, Form()],
         min_salary: Annotated[float, Form()] = 10,
         max_salary: Annotated[float, Form()] = 100,
-        db: Session = Depends(get_db)
+        background_tasks: BackgroundTasks = BackgroundTasks,
+        db: Session = Depends(get_db),
 ) -> JSONResponse:
     try:
         executor = BankStatementExecutor()
 
         result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
                                   min_salary=min_salary, max_salary=max_salary)
-        bank_statement_excel_response = FileService.upload_file(
-            FileService.get_export_file_path(result.excel_file_path))
-        bank_statement_excel_salary_response = FileService.upload_file(
-            FileService.get_export_file_path(result.salary_excel_file_path))
-
+        excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
+        salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
+        print(excel_file_full_path)
+        bank_statement_excel_response = FileService.upload_file(excel_file_full_path)
+        bank_statement_excel_salary_response = FileService.upload_file(salary_excel_full_path)
+        background_tasks.add_task(clean_exports, [excel_file_full_path, salary_excel_full_path])
         bank_statement = create_bank_statement(
             db,
             bank_statement_data=BankStatementCreate(
@@ -99,6 +101,8 @@ async def store(
                 closing_balance=result.closing_balance,
                 total_deposit=result.total_deposits,
                 total_withdrawal=result.total_withdrawals,
+                predicted_average_salary=result.predicted_average_salary,
+                average_monthly_balance=result.average_monthly_balance,
                 salary_predictions_file_url=bank_statement_excel_salary_response.get('file_url'),
                 exported_bank_statement_file_url=bank_statement_excel_response.get('file_url'),
                 start_date=result.period.get('from_date'),
@@ -114,6 +118,8 @@ async def store(
             closing_balance=bank_statement.closing_balance,
             total_deposit=bank_statement.total_deposit,
             total_withdrawal=bank_statement.total_withdrawal,
+            predicted_average_salary=bank_statement.predicted_average_salary,
+            average_monthly_balance=bank_statement.average_monthly_balance,
             salary_predictions_file_url=bank_statement.salary_predictions_file_url,
             exported_bank_statement_file_url=bank_statement.exported_bank_statement_file_url,
             start_date=bank_statement.start_date,
@@ -176,3 +182,8 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
 def index(db: Session = Depends(get_db)) -> Page[BankStatement]:
     bank_statements = all_bank_statements(db)
     return bank_statements
+
+
+def clean_exports(paths_to_files: list[str]):
+    for path_to_file in paths_to_files:
+        FileService.remove_file_from_dir(path_to_file)
