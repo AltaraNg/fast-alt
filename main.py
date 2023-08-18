@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
 )
-models.bank_statement_model.Base.metadata.create_all(bind=engine)
+models.bank_statement_model.Base.metadata.create_all(bind=engine, checkfirst=True)
 
 app = FastAPI()
 app.add_middleware(
