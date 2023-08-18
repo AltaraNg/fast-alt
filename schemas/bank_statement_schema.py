@@ -17,7 +17,6 @@ class BankStatementBase(BaseModel):
     repayment_capability: str | dict | list[dict] | None = []
 
 
-
 class BankStatementCreate(BankStatementBase):
     pass
 

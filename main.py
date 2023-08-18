@@ -117,6 +117,8 @@ async def store(
             exported_bank_statement_file_url=bank_statement.exported_bank_statement_file_url,
             start_date=bank_statement.start_date,
             end_date=bank_statement.end_date,
+            created_at=bank_statement.created_at,
+            updated_at=bank_statement.updated_at
         ).model_dump()
 
         return JSONResponse(
