@@ -16,6 +16,8 @@ from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
 from config.ConfigService import config
+from shutil import copyfileobj
+import os
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -87,7 +89,7 @@ async def store(
                                   min_salary=min_salary, max_salary=max_salary)
         excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
         salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
-        print(excel_file_full_path)
+
         bank_statement_excel_response = FileService.upload_file(excel_file_full_path)
         bank_statement_excel_salary_response = FileService.upload_file(salary_excel_full_path)
         background_tasks.add_task(clean_exports, [excel_file_full_path, salary_excel_full_path])
@@ -140,6 +142,8 @@ async def store(
         logging.error(e)
         if config.app_env != 'local':
             bank_statement_name = executor.BANK_STATEMENTS_CHOICES.get(int(bank_statement_choice))
+            pdf_file_path = create_upload_file(bank_statement_pdf)
+            background_tasks.add_task(clean_exports, [pdf_file_path])
             await MailService.send_email_async(
                 subject="Bank Statement Processing Failed",
                 email_to="tadewuyi@altaracredit.com",
@@ -151,7 +155,7 @@ async def store(
                     "file_name": bank_statement_pdf.filename
                 },
                 template="bank_statement_processing_failed",
-                attachment=bank_statement_pdf
+                attachment=pdf_file_path
             )
         return JSONResponse(
             status_code=400,
@@ -187,3 +191,15 @@ def index(db: Session = Depends(get_db)) -> Page[BankStatement]:
 def clean_exports(paths_to_files: list[str]):
     for path_to_file in paths_to_files:
         FileService.remove_file_from_dir(path_to_file)
+
+
+def create_upload_file(uploaded_file: UploadFile = File(...)):
+    folder_location = "exports/pdfs"
+    if not os.path.exists(folder_location):
+        os.makedirs(folder_location)
+        # Get the file's content and save it locally
+    with open(os.path.join(folder_location, uploaded_file.filename), "wb") as f:
+        copyfileobj(uploaded_file.file, f)
+    path = folder_location + "/" + uploaded_file.filename
+    print(f"file {uploaded_file.filename} saved at {path}")
+    return FileService.get_export_file_path(path)
