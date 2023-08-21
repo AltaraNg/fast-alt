@@ -30,6 +30,8 @@ class FileService:
 
     @classmethod
     def file_exist(cls, path_to_file):
+        if path_to_file is None:
+            return False
         return os.path.exists(path_to_file)
 
     @staticmethod

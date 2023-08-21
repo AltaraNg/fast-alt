@@ -4,16 +4,16 @@ from pydantic import BaseModel, field_serializer
 
 class BankStatementBase(BaseModel):
     customer_id: int | None = None
-    account_name: str
-    account_number: str
-    opening_balance: float
-    closing_balance: float
-    total_deposit: float
-    total_withdrawal: float
+    account_name: str | None
+    account_number: str | None
+    opening_balance: float | None
+    closing_balance: float | None
+    total_deposit: float | None
+    total_withdrawal: float | None
     salary_predictions_file_url: str | None
     exported_bank_statement_file_url: str | None
-    start_date: str | datetime.date
-    end_date: str | datetime.date
+    start_date: str | datetime.date | None
+    end_date: str | datetime.date | None
     repayment_capability: str | dict | list[dict] | None = []
     average_monthly_balance: float | None = None
     predicted_average_salary: float | None = None

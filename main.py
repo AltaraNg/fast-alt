@@ -1,6 +1,6 @@
 import logging
-
-from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query, BackgroundTasks
+from typing import Dict
+from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query, BackgroundTasks, HTTPException
 from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
 import models.bank_statement_model
@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config.ConfigService import config
 from shutil import copyfileobj
 import os
+from fastapi.exceptions import RequestValidationError, ValidationException
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -43,6 +44,17 @@ async def unicorn_exception_handler(request: Request, exc: NotFoundException):
             "status": "failed",
             "message": exc.message,
         },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+@app.exception_handler(ValidationException)
+async def validation_exception_handler(request, exc):
+    print("here")
+    validation_errors = format_validation_errors(exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content=validation_errors,
     )
 
 
@@ -75,10 +87,11 @@ def get_bank_statement_choices() -> JSONResponse:
 @app.post("/bank-statements", summary="Upload bank statement for processing")
 async def store(
         customer_id: Annotated[int, Form()],
-        bank_statement_pdf: Annotated[UploadFile, File()],
+        bank_statement_pdf: Annotated[UploadFile, File(...)],
         bank_statement_choice: Annotated[int, Form()],
         min_salary: Annotated[float, Form()] = 100000,
         max_salary: Annotated[float, Form()] = 150000,
+        password: Annotated[str, Form()] = '',
         background_tasks: BackgroundTasks = BackgroundTasks,
         db: Session = Depends(get_db),
 ) -> JSONResponse:
@@ -86,7 +99,7 @@ async def store(
         executor = BankStatementExecutor()
 
         result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
-                                  min_salary=min_salary, max_salary=max_salary)
+                                  min_salary=min_salary, max_salary=max_salary, password=password)
 
         excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
         salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
@@ -187,6 +200,16 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
 def index(db: Session = Depends(get_db)) -> Page[BankStatement]:
     bank_statements = all_bank_statements(db)
     return bank_statements
+
+
+def format_validation_errors(errors: Dict[str, str]) -> Dict[str, str]:
+    formatted_errors = {}
+    print(errors)
+    for error in errors:
+        field = error['loc'][1]
+        error_message = error['msg']
+        formatted_errors[field] = error_message
+    return formatted_errors
 
 
 def clean_exports(paths_to_files: list[str]):
