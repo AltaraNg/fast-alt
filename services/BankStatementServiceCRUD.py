@@ -32,6 +32,7 @@ def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate)
             start_date=datetime.strptime(bank_statement_data.start_date, "%Y-%m-%d"),
             end_date=datetime.strptime(bank_statement_data.end_date, "%Y-%m-%d")
         )
+
         db.add(db_bank_statement)
         db.commit()
         db.refresh(db_bank_statement)
