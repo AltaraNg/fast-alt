@@ -6,13 +6,13 @@ from fastapi import File, UploadFile
 from typing import Optional
 from pathlib import Path
 
+
 class MailService:
 
     @classmethod
     async def send_email_async(cls, subject: str, email_to: str, body: dict, template: str,
-                               attachment: Optional[UploadFile | None] = File()):
+                               attachment: Optional[UploadFile |str| None] = File()):
         # Save the uploaded file to a local directory
-
 
         message = MessageSchema(
             subject=subject,
