@@ -87,6 +87,7 @@ async def store(
 
         result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
                                   min_salary=min_salary, max_salary=max_salary)
+
         excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
         salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
 
