@@ -77,8 +77,8 @@ async def store(
         customer_id: Annotated[int, Form()],
         bank_statement_pdf: Annotated[UploadFile, File()],
         bank_statement_choice: Annotated[int, Form()],
-        min_salary: Annotated[float, Form()] = 10,
-        max_salary: Annotated[float, Form()] = 100,
+        min_salary: Annotated[float, Form()] = 100000,
+        max_salary: Annotated[float, Form()] = 150000,
         background_tasks: BackgroundTasks = BackgroundTasks,
         db: Session = Depends(get_db),
 ) -> JSONResponse:
