@@ -36,5 +36,5 @@ class BankStatement(Base):
     updated_at = Column(DateTime, nullable=True, default=datetime.now())
     customer_id = Column(Integer, nullable=True)
     repayment_capability = Column(JSONEncodedList, nullable=True)
-    # predicted_average_salary = Column(Float, nullable=True)
-    # average_monthly_balance = Column(Float, nullable=True)
+    predicted_average_salary = Column(Float, nullable=True)
+    average_monthly_balance = Column(Float, nullable=True)
