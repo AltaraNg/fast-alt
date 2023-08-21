@@ -8,6 +8,8 @@ class ConfigService(BaseSettings):
     app_name: str = "Awesome API"
     app_env: str = "local"
 
+
+
     # APP MAILS
     app_admin_email: str = "naderounmu@altaracredit.com"
     app_technology_mail: str = "naderounmu@altaracredit.com"
@@ -38,6 +40,8 @@ class ConfigService(BaseSettings):
 
     base_dir: str = BASE_DIR
     template_dir: str = BASE_DIR + "/templates"
+
+    show_query: bool = False
 
     model_config = SettingsConfigDict(env_file=".env")
 
