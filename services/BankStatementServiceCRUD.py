@@ -5,9 +5,10 @@ from pydantic import ValidationError
 from datetime import datetime
 from exceptions.NotFoundException import NotFoundException
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select,asc,desc
+from sqlalchemy import select, asc, desc
 from fastapi_pagination import Page
 from pydantic import Field
+from filters.BankStatementFilter import BankStatementFilter
 
 Page = Page.with_custom_options(
     size=Field(15, ge=1, le=100)
@@ -51,6 +52,17 @@ def get_bank_statement(db: Session, bank_statement_id):
     return item
 
 
-def all_bank_statements(db: Session) -> Page[BankStatementSchema]:
-    bank_statements = paginate(db, select(BankStatement).order_by(desc('created_at')))
-    return bank_statements
+def all_bank_statements(filter_query: BankStatementFilter, db: Session) -> Page[BankStatementSchema]:
+    query = db.query(BankStatement)
+    query = filter_query.apply(query)
+    query = query.order_by(desc('created_at'))
+    return paginate(db, query)
+
+
+def all_bank_statements_v2(filter_query: BankStatementFilter, db: Session) -> Page[BankStatementSchema]:
+    query = db.query(BankStatement)
+
+    query = filter_query.apply(query)
+    query = query.order_by(desc('created_at'))
+    posts = paginate(db, query)
+    return posts

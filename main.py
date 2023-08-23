@@ -11,7 +11,8 @@ from starlette.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from exceptions.NotFoundException import NotFoundException
 from services.FileService import FileService
-from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements
+from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements, \
+    all_bank_statements_v2
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,7 @@ from config.ConfigService import config
 from shutil import copyfileobj
 import os
 from fastapi.exceptions import RequestValidationError, ValidationException
+from filters.BankStatementFilter import BankStatementFilter
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -180,6 +182,10 @@ async def store(
         )
 
 
+
+
+
+
 @app.get("/bank-statements/{bank_statement_id}",
          summary="Retrieve a single bank statement by passing bank statement id")
 def show(bank_statement_id: int = Path(title="The ID of the bank statement to get"),
@@ -197,8 +203,10 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
 
 
 @app.get("/bank-statements", summary="Get paginated processed bank statements")
-def index(db: Session = Depends(get_db)) -> Page[BankStatement]:
-    bank_statements = all_bank_statements(db)
+def index(request: Request = Request, db: Session = Depends(get_db)) -> Page[BankStatement]:
+    query_params = dict(request.query_params)
+    bank_statement_filter = BankStatementFilter(query_params)
+    bank_statements = all_bank_statements_v2(db=db, filter_query=bank_statement_filter)
     return bank_statements
 
 
