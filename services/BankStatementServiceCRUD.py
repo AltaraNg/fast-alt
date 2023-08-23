@@ -48,7 +48,6 @@ def get_bank_statement(db: Session, bank_statement_id):
     item = db.query(BankStatement).filter(BankStatement.id == bank_statement_id).first()
     if item is None:
         raise NotFoundException(f"The provided bank statement id: {bank_statement_id} could not be found")
-    # print(item.dict())
     return item
 
 

@@ -16,7 +16,7 @@ class FileService:
     @classmethod
     def remove_file_from_dir(cls, path_to_file):
         if not cls.file_exist(path_to_file):
-            raise FileExistsError
+            return None
         os.remove(path_to_file)
 
     @classmethod

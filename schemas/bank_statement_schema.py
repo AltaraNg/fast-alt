@@ -1,5 +1,7 @@
 import datetime
 from pydantic import BaseModel, field_serializer
+from models.bank_statement_model import BankStatement as BankStatementBankModel
+from bank_statement_reader.BankStatementFinalResultResponse import BankStatementFinalResultResponse
 
 
 class BankStatementBase(BaseModel):
@@ -43,6 +45,49 @@ class BankStatement(BankStatementBase):
     @field_serializer('updated_at')
     def serialize_updated_at(self, updated_at: datetime.date, _info):
         return updated_at.__format__('%Y-%m-%d %H:%M:%S')
+
+    @staticmethod
+    def from_model_to_resource(bank_statement: BankStatementBankModel):
+        return BankStatement(
+            id=bank_statement.id,
+            customer_id=bank_statement.customer_id,
+            account_name=bank_statement.account_name,
+            account_number=bank_statement.account_number,
+            opening_balance=bank_statement.opening_balance,
+            closing_balance=bank_statement.closing_balance,
+            total_deposit=bank_statement.total_deposit,
+            total_withdrawal=bank_statement.total_withdrawal,
+            predicted_average_salary=bank_statement.predicted_average_salary,
+            average_monthly_balance=bank_statement.average_monthly_balance,
+            salary_predictions_file_url=bank_statement.salary_predictions_file_url,
+            exported_bank_statement_file_url=bank_statement.exported_bank_statement_file_url,
+            start_date=bank_statement.start_date,
+            end_date=bank_statement.end_date,
+            created_at=bank_statement.created_at,
+            updated_at=bank_statement.updated_at
+        ).model_dump()
+
+
+    @staticmethod
+    def from_request_api(customer_id: int, result: BankStatementFinalResultResponse,
+                         bank_statement_excel_salary_response: dict | None,
+                         bank_statement_excel_response: dict | None):
+        return BankStatementCreate(
+            customer_id=customer_id,
+            account_name=result.account_name,
+            account_number=result.account_number,
+            opening_balance=result.opening_balance,
+            closing_balance=result.closing_balance,
+            total_deposit=result.total_deposits,
+            total_withdrawal=result.total_withdrawals,
+            predicted_average_salary=result.predicted_average_salary,
+            average_monthly_balance=result.average_monthly_balance,
+            salary_predictions_file_url=bank_statement_excel_salary_response.get('file_url'),
+            exported_bank_statement_file_url=bank_statement_excel_response.get('file_url'),
+            start_date=result.period.get('from_date'),
+            end_date=result.period.get('to_date')
+        )
+
 
     class Config:
         from_attributes = True
