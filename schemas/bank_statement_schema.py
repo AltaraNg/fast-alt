@@ -2,8 +2,7 @@ import datetime
 from pydantic import BaseModel, field_serializer
 from models.bank_statement_model import BankStatement as BankStatementBankModel
 from bank_statement_reader.BankStatementFinalResultResponse import BankStatementFinalResultResponse
-
-
+from typing import Any
 class BankStatementBase(BaseModel):
     customer_id: int | None = None
     account_name: str | None
@@ -47,7 +46,7 @@ class BankStatement(BankStatementBase):
         return updated_at.__format__('%Y-%m-%d %H:%M:%S')
 
     @staticmethod
-    def from_model_to_resource(bank_statement: BankStatementBankModel):
+    def from_model_to_resource(bank_statement: BankStatementBankModel) -> dict[str, Any]:
         return BankStatement(
             id=bank_statement.id,
             customer_id=bank_statement.customer_id,
@@ -67,11 +66,10 @@ class BankStatement(BankStatementBase):
             updated_at=bank_statement.updated_at
         ).model_dump()
 
-
     @staticmethod
     def from_request_api(customer_id: int, result: BankStatementFinalResultResponse,
                          bank_statement_excel_salary_response: dict | None,
-                         bank_statement_excel_response: dict | None):
+                         bank_statement_excel_response: dict | None) -> BankStatementCreate:
         return BankStatementCreate(
             customer_id=customer_id,
             account_name=result.account_name,
@@ -87,7 +85,6 @@ class BankStatement(BankStatementBase):
             start_date=result.period.get('from_date'),
             end_date=result.period.get('to_date')
         )
-
 
     class Config:
         from_attributes = True
