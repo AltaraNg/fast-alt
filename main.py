@@ -11,8 +11,7 @@ from starlette.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from exceptions.NotFoundException import NotFoundException
 from services.FileService import FileService
-from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements, \
-    all_bank_statements_v2
+from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +19,7 @@ from config.ConfigService import config
 from shutil import copyfileobj
 import os
 from fastapi.exceptions import RequestValidationError, ValidationException
-from filters.BankStatementFilter import BankStatementFilter
+from filters.BankStatementQueryParams import BankStatementQueryParams
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -182,8 +181,14 @@ async def store(
         )
 
 
-
-
+@app.get("/bank-statements", summary="Get paginated processed bank statements")
+def index(
+        bank_statement_query_params: BankStatementQueryParams = Depends(BankStatementQueryParams),
+        db: Session = Depends(get_db)
+) -> Page[BankStatement]:
+    # query_params = bank_statement_query_params.__dict__
+    bank_statements = all_bank_statements(db=db, filter_query=bank_statement_query_params)
+    return bank_statements
 
 
 @app.get("/bank-statements/{bank_statement_id}",
@@ -201,13 +206,6 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
         },
     )
 
-
-@app.get("/bank-statements", summary="Get paginated processed bank statements")
-def index(request: Request = Request, db: Session = Depends(get_db)) -> Page[BankStatement]:
-    query_params = dict(request.query_params)
-    bank_statement_filter = BankStatementFilter(query_params)
-    bank_statements = all_bank_statements_v2(db=db, filter_query=bank_statement_filter)
-    return bank_statements
 
 
 def format_validation_errors(errors: Dict[str, str]) -> Dict[str, str]:
