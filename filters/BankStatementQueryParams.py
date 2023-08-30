@@ -36,7 +36,7 @@ class BankStatementQueryParams:
                  ),
                  bank_statement_choice=Query(
                      None,
-                     description="(COMING SOON....) Filter bank statements by exact bank statement_choice",
+                     description="Filter bank statements by exact bank statement_choice",
                      example=1
                  ),
                  from_date=Query(
