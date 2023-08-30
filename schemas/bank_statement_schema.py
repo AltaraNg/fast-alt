@@ -1,10 +1,15 @@
 import datetime
 from pydantic import BaseModel, field_serializer
-from models.bank_statement_model import BankStatement as BankStatementBankModel
+from models.BankStatementModel import BankStatement as BankStatementBankModel
 from bank_statement_reader.BankStatementFinalResultResponse import BankStatementFinalResultResponse
 from typing import Any
+from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
+
+
 class BankStatementBase(BaseModel):
     customer_id: int | None = None
+    bank_choice: int | str | None = None
+    bank_choice_label: str | None = None
     account_name: str | None
     account_number: str | None
     opening_balance: float | None
@@ -47,9 +52,12 @@ class BankStatement(BankStatementBase):
 
     @staticmethod
     def from_model_to_resource(bank_statement: BankStatementBankModel) -> dict[str, Any]:
+
         return BankStatement(
             id=bank_statement.id,
             customer_id=bank_statement.customer_id,
+            bank_choice=bank_statement.bank_choice,
+            bank_choice_label=BankStatement.get_choice_label(bank_statement.bank_choice),
             account_name=bank_statement.account_name,
             account_number=bank_statement.account_number,
             opening_balance=bank_statement.opening_balance,
@@ -85,6 +93,14 @@ class BankStatement(BankStatementBase):
             start_date=result.period.get('from_date'),
             end_date=result.period.get('to_date')
         )
+
+    @staticmethod
+    def get_choice_label(choice):
+        choices = BankStatementExecutor.BANK_STATEMENTS_CHOICES
+        if choice in BankStatementExecutor.BANK_STATEMENTS_CHOICES:
+            return choices.get(choice)
+        else:
+            return None
 
     class Config:
         from_attributes = True

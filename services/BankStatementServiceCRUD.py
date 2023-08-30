@@ -1,22 +1,34 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.bank_statement_schema import BankStatementCreate, BankStatement as BankStatementSchema
-from models.bank_statement_model import BankStatement
+from models.BankStatementModel import BankStatement
 from pydantic import ValidationError
 from datetime import datetime
 from exceptions.NotFoundException import NotFoundException
 from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select, asc, desc
+from sqlalchemy import select, asc, desc, or_, and_, delete, func
 from fastapi_pagination import Page
 from pydantic import Field
 from filters.BankStatementQueryParams import BankStatementQueryParams
+from exceptions.BankStatementExists import BankStatementExists
+from schemas.bank_statement_day_end_trans_schema import BankStatementDayEndTransactionOut
+from models.BankStatementDayEndTransactionsModel import BankStatementDayEndTransactions
 
 Page = Page.with_custom_options(
     size=Field(15, ge=1, le=100)
 )
 
 
+def bank_statement_exists(db: Session, account_number, start_date, end_date) -> BankStatement | None:
+    return db.query(BankStatement).filter(
+        BankStatement.account_number == account_number,
+        BankStatement.start_date == start_date,
+        BankStatement.end_date == end_date
+    ).order_by(desc('created_at')).first()
+
+
 def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate):
     try:
+
         db_bank_statement = BankStatement(
             customer_id=bank_statement_data.customer_id,
             repayment_capability=bank_statement_data.repayment_capability,
@@ -45,17 +57,55 @@ def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate)
 
 
 def get_bank_statement(db: Session, bank_statement_id):
-    item = db.query(BankStatement).filter(BankStatement.id == bank_statement_id).first()
+    item = (db.query(BankStatement).options(joinedload(BankStatement.bankStatementDayEndTransactions))
+            .filter(BankStatement.id == bank_statement_id).first())
     if item is None:
         raise NotFoundException(f"The provided bank statement id: {bank_statement_id} could not be found")
     return item
+
+
+def get_bank_statement_repayment_capability(db: Session, bank_statement_id):
+    items = (db.query(
+        func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
+        func.count().label("count_no")
+    ).filter(BankStatementDayEndTransactions.balance >= 9000,
+             BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
+             .group_by(
+        func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date)).all())
+    result = []
+    for index, item in enumerate(items):
+        result.append({
+            "month_name": datetime.strptime(item.month, "%m-%Y").strftime('%B'),
+            "count": item.count_no,
+            f"Month {index + 1}": item.count_no
+        })
+    return result
 
 
 def all_bank_statements(filter_query: BankStatementQueryParams, db: Session) -> Page[BankStatementSchema]:
     query = db.query(BankStatement)
     query = filter_query.apply(query)
     query = query.order_by(desc('created_at'))
-    return paginate(db, query)
+    return paginate(query)
 
 
-
+def sync_with_end_of_day_transactions(db: Session, end_of_day_transactions: list[dict], bank_statement: BankStatement):
+    data = []
+    # build model instances
+    for transaction in end_of_day_transactions:
+        create_data = BankStatementDayEndTransactionOut.from_request_api(
+            bank_statement_id=bank_statement.id,
+            balance=transaction.get('balance'),
+            deposit=transaction.get('deposits'),
+            withdrawal=transaction.get('withdrawals'),
+            transaction_date=transaction.get('transaction_date'),
+            description=transaction.get('description')
+        )
+        data.append(BankStatementDayEndTransactionOut.from_create_to_model(create_data))
+    # remove existing data
+    (db.query(BankStatementDayEndTransactions).
+     filter(BankStatementDayEndTransactions.bank_statement_id == bank_statement.id).
+     delete())
+    db.add_all(data)
+    db.commit()
+    return
