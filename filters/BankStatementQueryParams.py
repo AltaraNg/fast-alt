@@ -1,4 +1,4 @@
-from models.bank_statement_model import BankStatement
+from models.BankStatementModel import BankStatement
 from datetime import datetime, timedelta
 
 from sqlalchemy import between
@@ -64,8 +64,8 @@ class BankStatementQueryParams:
             query = query.filter(BankStatement.account_name.ilike(f"%{self.account_name}%"))
         if self.account_number:
             query = query.filter(BankStatement.account_number == self.account_number)
-        # if self.bank_statement_choice:
-        #     query = query.filter(BankStatement.bank_statement_choice == self.bank_statement_choice)
+        if self.bank_statement_choice:
+            query = query.filter(BankStatement.bank_choice == self.bank_statement_choice)
         if self.customer_id:
             query = query.filter(BankStatement.customer_id == self.customer_id)
         if self.from_date:

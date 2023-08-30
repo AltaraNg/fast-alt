@@ -1,7 +1,7 @@
 aiosmtplib==2.0.2
 annotated-types==0.5.0
 anyio==3.7.1
-bank-statement-reader-altara==1.4.6
+bank-statement-reader-altara==1.4.8
 blinker==1.6.2
 boto3==1.28.29
 botocore==1.31.29

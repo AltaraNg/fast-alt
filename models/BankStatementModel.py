@@ -3,6 +3,7 @@ from config.database import Base
 from datetime import datetime
 import json
 from sqlalchemy.types import TypeDecorator, TEXT
+from sqlalchemy.orm import relationship
 
 
 class JSONEncodedList(TypeDecorator):
@@ -35,6 +36,9 @@ class BankStatement(Base):
     created_at = Column(DateTime, nullable=True, default=datetime.now())
     updated_at = Column(DateTime, nullable=True, default=datetime.now())
     customer_id = Column(Integer, nullable=True)
+    bank_choice = Column(Integer, nullable=True)
     repayment_capability = Column(JSONEncodedList, nullable=True)
     predicted_average_salary = Column(Float(precision=12), nullable=True)
     average_monthly_balance = Column(Float(precision=12), nullable=True)
+
+    bankStatementDayEndTransactions = relationship("BankStatementDayEndTransactions", back_populates="bankStatement")

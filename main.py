@@ -3,7 +3,8 @@ from typing import Dict
 from fastapi import FastAPI, File, Form, UploadFile, Depends, Path, Request, Query, BackgroundTasks, HTTPException
 from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
-import models.bank_statement_model
+import models.BankStatementModel
+import models.BankStatementDayEndTransactionsModel
 from schemas.bank_statement_schema import BankStatementCreate, BankStatement
 from config.database import SessionLocal, engine
 from sqlalchemy.orm import Session
@@ -11,7 +12,8 @@ from starlette.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from exceptions.NotFoundException import NotFoundException
 from services.FileService import FileService
-from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements
+from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements, \
+    sync_with_end_of_day_transactions, bank_statement_exists, get_bank_statement_repayment_capability
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +26,8 @@ from filters.BankStatementQueryParams import BankStatementQueryParams
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
 )
-models.bank_statement_model.Base.metadata.create_all(bind=engine, checkfirst=True)
-
+models.BankStatementModel.Base.metadata.create_all(bind=engine, checkfirst=True)
+models.BankStatementDayEndTransactionsModel.Base.metadata.create_all(bind=engine, checkfirst=True)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -101,20 +103,28 @@ async def store(
 
         result = executor.execute(choice=int(bank_statement_choice), pdf_file=bank_statement_pdf.file,
                                   min_salary=min_salary, max_salary=max_salary, password=password)
+        uploaded_statement_exists = bank_statement_exists(db=db, account_number=result.account_number,
+                                                          start_date=result.period.get('from_date'),
+                                                          end_date=result.period.get('to_date')
+                                                          )
 
-        excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
-        salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
+        if uploaded_statement_exists is None:
+            excel_file_full_path = FileService.get_export_file_path(result.excel_file_path)
+            salary_excel_full_path = FileService.get_export_file_path(result.salary_excel_file_path)
 
-        bank_statement_excel_response = FileService.upload_file(excel_file_full_path)
-        bank_statement_excel_salary_response = FileService.upload_file(salary_excel_full_path)
-        background_tasks.add_task(clean_exports, [excel_file_full_path, salary_excel_full_path])
-        bank_statement_data = BankStatement.from_request_api(
-            customer_id=customer_id, result=result,
-            bank_statement_excel_salary_response=bank_statement_excel_salary_response,
-            bank_statement_excel_response=bank_statement_excel_response
-        )
-        bank_statement = create_bank_statement(db=db, bank_statement_data=bank_statement_data)
-        bank_statement_resource = BankStatement.from_model_to_resource(bank_statement)
+            bank_statement_excel_response = FileService.upload_file(excel_file_full_path)
+            bank_statement_excel_salary_response = FileService.upload_file(salary_excel_full_path)
+            background_tasks.add_task(clean_exports, [excel_file_full_path, salary_excel_full_path])
+            bank_statement_data = BankStatement.from_request_api(
+                customer_id=customer_id, result=result,
+                bank_statement_excel_salary_response=bank_statement_excel_salary_response,
+                bank_statement_excel_response=bank_statement_excel_response
+            )
+            saved_bank_statement = create_bank_statement(db=db, bank_statement_data=bank_statement_data)
+        else:
+            saved_bank_statement = uploaded_statement_exists
+        bank_statement_resource = BankStatement.from_model_to_resource(saved_bank_statement)
+        sync_with_end_of_day_transactions(db, result.last_transaction_per_day, saved_bank_statement)
         return JSONResponse(
             status_code=200,
             content={
@@ -171,6 +181,21 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
         status_code=200,
         content={
             "data": jsonable_encoder(bank_statement),
+            "message": "Bank statement successfully processed",
+            "status": "success"
+        },
+    )
+
+
+@app.get("/bank-statements/{bank_statement_id}/repayment/capability",
+         summary="Retrieve repayment capability from bank statement by passing bank statement id")
+def show(bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
+         db: Session = Depends(get_db)):
+    bank_statement = get_bank_statement_repayment_capability(db, bank_statement_id)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "data": bank_statement,
             "message": "Bank statement successfully processed",
             "status": "success"
         },
