@@ -187,16 +187,17 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
     )
 
 
-@app.get("/bank-statements/{bank_statement_id}/repayment/capability",
+@app.get("/bank-statements/{bank_statement_id}/repayment/capability/{amount}",
          summary="Retrieve repayment capability from bank statement by passing bank statement id")
 def show(bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
+         amount: float = Path(title="The amount of repayment"),
          db: Session = Depends(get_db)):
-    bank_statement = get_bank_statement_repayment_capability(db, bank_statement_id)
+    bank_statement = get_bank_statement_repayment_capability(db, bank_statement_id, amount)
     return JSONResponse(
         status_code=200,
         content={
             "data": bank_statement,
-            "message": "Bank statement successfully processed",
+            "message": "Bank statement repayment capability retrieved",
             "status": "success"
         },
     )

@@ -64,11 +64,11 @@ def get_bank_statement(db: Session, bank_statement_id):
     return item
 
 
-def get_bank_statement_repayment_capability(db: Session, bank_statement_id):
+def get_bank_statement_repayment_capability(db: Session, bank_statement_id, amount):
     items = (db.query(
         func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
         func.count().label("count_no")
-    ).filter(BankStatementDayEndTransactions.balance >= 9000,
+    ).filter(BankStatementDayEndTransactions.balance >= amount,
              BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
              .group_by(
         func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date)).all())
