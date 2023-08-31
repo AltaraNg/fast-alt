@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 class BankStatementDayEndTransactions(Base):
-    __tablename__ = "bank_statement_day_end_transactions"
+    __tablename__ = "bank_statements_day_end_transactions"
     id = Column(Integer, primary_key=True, index=True)
     bank_statement_id = Column(Integer, ForeignKey('bank_statements.id'))
     balance = Column(Float(precision=12), nullable=True)
