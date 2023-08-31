@@ -12,7 +12,7 @@ class BankStatementDayEndTransactions(Base):
     deposit = Column(Float(precision=12), nullable=True)
     withdrawal = Column(Float(precision=12), nullable=True)
     transaction_date = Column(Date, nullable=False)
-    description = Column(String, nullable=False)
+    description = Column(String(255), nullable=False)
     created_at = Column(DateTime, nullable=True, default=datetime.now())
     updated_at = Column(DateTime, nullable=True, default=datetime.now())
     bankStatement = relationship("BankStatement", back_populates="bankStatementDayEndTransactions")
