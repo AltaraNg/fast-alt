@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from config.ConfigService import config
 
-if config.app_env == 'local':
+if config.db_connection == 'sqlite':
     SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 else:
     username = config.db_username
