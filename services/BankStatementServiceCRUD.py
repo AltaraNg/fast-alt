@@ -12,7 +12,7 @@ from filters.BankStatementQueryParams import BankStatementQueryParams
 from exceptions.BankStatementExists import BankStatementExists
 from schemas.bank_statement_day_end_trans_schema import BankStatementDayEndTransactionOut
 from models.BankStatementDayEndTransactionsModel import BankStatementDayEndTransactions
-
+from config.ConfigService import config
 Page = Page.with_custom_options(
     size=Field(15, ge=1, le=100)
 )
@@ -65,15 +65,25 @@ def get_bank_statement(db: Session, bank_statement_id):
 
 
 def get_bank_statement_repayment_capability(db: Session, bank_statement_id, amount):
-    items = (db.query(
-        func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
-        func.count().label("count_no")
-    ).filter(BankStatementDayEndTransactions.balance >= amount,
-             BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
-             .group_by(
-        func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date)).all())
+    if config.db_connection == 'sqlite':
+        items = (db.query(
+            func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
+            func.count().label("count_no")
+        ).filter(BankStatementDayEndTransactions.balance >= amount,
+                 BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
+                 .group_by(
+            func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date)).all())
+    else:
+        items = (db.query(
+            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date, "%m-%Y").label("month"),
+            func.count().label("count_no")
+        ).filter(BankStatementDayEndTransactions.balance >= amount,
+                 BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
+                 .group_by(
+            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date,"%m-%Y")).all())
     result = []
     for index, item in enumerate(items):
+        print(item)
         result.append({
             "month_name": datetime.strptime(item.month, "%m-%Y").strftime('%B'),
             "count": item.count_no,
