@@ -58,7 +58,6 @@ async def unicorn_exception_handler(request: Request, exc: NotFoundException):
 @app.exception_handler(RequestValidationError)
 @app.exception_handler(ValidationException)
 async def validation_exception_handler(request, exc):
-    print("here")
     validation_errors = format_validation_errors(exc.errors())
     return JSONResponse(
         status_code=422,
@@ -184,7 +183,6 @@ def get_bank_statement_transactions(
         bank_statement_query_params: BankStatementTransactionQueryParams = Depends(BankStatementTransactionQueryParams),
         db: Session = Depends(get_db)
 ) -> Page[BankStatementTransactionOut]:
-    # query_params = bank_statement_query_params.__dict__
     bank_statements = all_bank_statement_transactions(db=db, filter_query=bank_statement_query_params,
                                                       bank_statement_id=bank_statement_id)
     return bank_statements
