@@ -5,7 +5,9 @@ from typing import Annotated
 from bank_statement_reader.BankStatementExecutor import BankStatementExecutor
 import models.BankStatementModel
 import models.BankStatementDayEndTransactionsModel
-from schemas.bank_statement_schema import BankStatementCreate, BankStatement
+import models.BankStatementTransactionsModel
+from schemas.bank_statement_schema import BankStatement
+from schemas.bank_statement_day_end_trans_schema import BankStatementTransactionOut
 from config.database import SessionLocal, engine
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
@@ -13,7 +15,8 @@ from fastapi.encoders import jsonable_encoder
 from exceptions.NotFoundException import NotFoundException
 from services.FileService import FileService
 from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements, \
-    sync_with_end_of_day_transactions, bank_statement_exists, get_bank_statement_repayment_capability
+    sync_with_end_of_day_transactions, bank_statement_exists, get_bank_statement_repayment_capability, \
+    sync_with_all_transactions, all_bank_statement_transactions
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,12 +25,14 @@ from shutil import copyfileobj
 import os
 from fastapi.exceptions import RequestValidationError, ValidationException
 from filters.BankStatementQueryParams import BankStatementQueryParams
+from filters.BankStatementTransactionsQueryParams import BankStatementTransactionQueryParams
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
 )
 models.BankStatementModel.Base.metadata.create_all(bind=engine, checkfirst=True)
 models.BankStatementDayEndTransactionsModel.Base.metadata.create_all(bind=engine, checkfirst=True)
+models.BankStatementTransactionsModel.Base.metadata.create_all(bind=engine, checkfirst=True)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -125,6 +130,7 @@ async def store(
             saved_bank_statement = uploaded_statement_exists
         bank_statement_resource = BankStatement.from_model_to_resource(saved_bank_statement)
         sync_with_end_of_day_transactions(db, result.last_transaction_per_day, saved_bank_statement)
+        sync_with_all_transactions(db, result.transactions, saved_bank_statement)
         return JSONResponse(
             status_code=200,
             content={
@@ -171,6 +177,19 @@ def index(
     return bank_statements
 
 
+@app.get("/bank-statements/{bank_statement_id}/transactions",
+         summary="Get paginated processed bank statements transactions")
+def get_bank_statement_transactions(
+        bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
+        bank_statement_query_params: BankStatementTransactionQueryParams = Depends(BankStatementTransactionQueryParams),
+        db: Session = Depends(get_db)
+) -> Page[BankStatementTransactionOut]:
+    # query_params = bank_statement_query_params.__dict__
+    bank_statements = all_bank_statement_transactions(db=db, filter_query=bank_statement_query_params,
+                                                      bank_statement_id=bank_statement_id)
+    return bank_statements
+
+
 @app.get("/bank-statements/{bank_statement_id}",
          summary="Retrieve a single bank statement by passing bank statement id")
 def show(bank_statement_id: int = Path(title="The ID of the bank statement to get"),
@@ -189,7 +208,7 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
 
 @app.get("/bank-statements/{bank_statement_id}/repayment/capability/{amount}",
          summary="Retrieve repayment capability from bank statement by passing bank statement id")
-def show(bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
+def get_bank_statement_repayment_capability(bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
          amount: float = Path(title="The amount of repayment"),
          db: Session = Depends(get_db)):
     bank_statement = get_bank_statement_repayment_capability(db, bank_statement_id, amount)

@@ -42,3 +42,4 @@ class BankStatement(Base):
     average_monthly_balance = Column(Float(precision=12), nullable=True)
 
     bankStatementDayEndTransactions = relationship("BankStatementDayEndTransactions", back_populates="bankStatement")
+    bankStatementTransactions = relationship("BankStatementTransactionsModel", back_populates="bankStatement")

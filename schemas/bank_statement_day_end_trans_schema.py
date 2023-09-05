@@ -2,11 +2,12 @@ import datetime
 from pydantic import BaseModel, field_serializer
 from models.BankStatementDayEndTransactionsModel import \
     BankStatementDayEndTransactions as BankStatementDayEndTransactionsModel
+from models.BankStatementTransactionsModel import BankStatementTransactionsModel
 
 from typing import Any
 
 
-class BankStatementDayEndTransactionBase(BaseModel):
+class BankStatementTransactionBase(BaseModel):
     bank_statement_id: int
     balance: float | None
     deposit: float | None
@@ -15,11 +16,11 @@ class BankStatementDayEndTransactionBase(BaseModel):
     description: str | None
 
 
-class BankStatementDayEndTransactionCreate(BankStatementDayEndTransactionBase):
+class BankStatementTransactionCreate(BankStatementTransactionBase):
     pass
 
 
-class BankStatementDayEndTransactionOut(BankStatementDayEndTransactionBase):
+class BankStatementTransactionOut(BankStatementTransactionBase):
     id: int
     created_at: str | datetime.datetime
     updated_at: str | datetime.datetime
@@ -38,7 +39,7 @@ class BankStatementDayEndTransactionOut(BankStatementDayEndTransactionBase):
 
     @staticmethod
     def from_model_to_resource(data: BankStatementDayEndTransactionsModel) -> dict[str, Any]:
-        return BankStatementDayEndTransactionOut(
+        return BankStatementTransactionOut(
             id=data.id,
             bank_statement_id=data.bank_statement_id,
             balance=data.balance,
@@ -51,8 +52,20 @@ class BankStatementDayEndTransactionOut(BankStatementDayEndTransactionBase):
         ).model_dump()
 
     @staticmethod
-    def from_create_to_model(data: BankStatementDayEndTransactionCreate) -> BankStatementDayEndTransactionsModel:
+    def from_create_to_model_day_end_transactions(data: BankStatementTransactionCreate) -> BankStatementDayEndTransactionsModel:
         return BankStatementDayEndTransactionsModel(
+            bank_statement_id=data.bank_statement_id,
+            balance=data.balance,
+            deposit=data.deposit,
+            withdrawal=data.withdrawal,
+            transaction_date=data.transaction_date,
+            description=data.description,
+        )
+
+    @staticmethod
+    def from_create_to_model_transactions(
+            data: BankStatementTransactionCreate) -> BankStatementTransactionsModel:
+        return BankStatementTransactionsModel(
             bank_statement_id=data.bank_statement_id,
             balance=data.balance,
             deposit=data.deposit,
@@ -64,8 +77,8 @@ class BankStatementDayEndTransactionOut(BankStatementDayEndTransactionBase):
     @staticmethod
     def from_request_api(bank_statement_id: int, balance: float, deposit: float, withdrawal: float,
                          transaction_date: datetime.date | datetime.datetime,
-                         description: str) -> BankStatementDayEndTransactionCreate:
-        return BankStatementDayEndTransactionCreate(
+                         description: str) -> BankStatementTransactionCreate:
+        return BankStatementTransactionCreate(
             bank_statement_id=bank_statement_id,
             balance=balance,
             deposit=deposit,
