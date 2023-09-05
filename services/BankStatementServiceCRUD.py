@@ -9,10 +9,13 @@ from sqlalchemy import select, asc, desc, or_, and_, delete, func
 from fastapi_pagination import Page
 from pydantic import Field
 from filters.BankStatementQueryParams import BankStatementQueryParams
+from filters.BankStatementTransactionsQueryParams import BankStatementTransactionQueryParams
 from exceptions.BankStatementExists import BankStatementExists
-from schemas.bank_statement_day_end_trans_schema import BankStatementDayEndTransactionOut
+from schemas.bank_statement_day_end_trans_schema import BankStatementTransactionOut
 from models.BankStatementDayEndTransactionsModel import BankStatementDayEndTransactions
+from models.BankStatementTransactionsModel import BankStatementTransactionsModel
 from config.ConfigService import config
+
 Page = Page.with_custom_options(
     size=Field(15, ge=1, le=100)
 )
@@ -80,7 +83,7 @@ def get_bank_statement_repayment_capability(db: Session, bank_statement_id, amou
         ).filter(BankStatementDayEndTransactions.balance >= amount,
                  BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
                  .group_by(
-            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date,"%m-%Y")).all())
+            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date, "%m-%Y")).all())
     result = []
     for index, item in enumerate(items):
         print(item)
@@ -99,11 +102,21 @@ def all_bank_statements(filter_query: BankStatementQueryParams, db: Session) -> 
     return paginate(query)
 
 
+def all_bank_statement_transactions(filter_query: BankStatementTransactionQueryParams, db: Session, bank_statement_id) -> Page[
+    BankStatementTransactionOut]:
+    get_bank_statement(db, bank_statement_id)
+    query = db.query(BankStatementTransactionsModel)
+    query = query.filter(BankStatementTransactionsModel.bank_statement_id == bank_statement_id)
+    query = filter_query.apply(query)
+    query = query.order_by(asc('transaction_date'))
+    return paginate(query)
+
+
 def sync_with_end_of_day_transactions(db: Session, end_of_day_transactions: list[dict], bank_statement: BankStatement):
     data = []
     # build model instances
     for transaction in end_of_day_transactions:
-        create_data = BankStatementDayEndTransactionOut.from_request_api(
+        create_data = BankStatementTransactionOut.from_request_api(
             bank_statement_id=bank_statement.id,
             balance=transaction.get('balance'),
             deposit=transaction.get('deposits'),
@@ -111,10 +124,32 @@ def sync_with_end_of_day_transactions(db: Session, end_of_day_transactions: list
             transaction_date=transaction.get('transaction_date'),
             description=transaction.get('description')
         )
-        data.append(BankStatementDayEndTransactionOut.from_create_to_model(create_data))
+        data.append(BankStatementTransactionOut.from_create_to_model_day_end_transactions(create_data))
     # remove existing data
     (db.query(BankStatementDayEndTransactions).
      filter(BankStatementDayEndTransactions.bank_statement_id == bank_statement.id).
+     delete())
+    db.add_all(data)
+    db.commit()
+    return
+
+
+def sync_with_all_transactions(db: Session, transactions: list[dict], bank_statement: BankStatement):
+    data = []
+    # build model instances
+    for transaction in transactions:
+        create_data = BankStatementTransactionOut.from_request_api(
+            bank_statement_id=bank_statement.id,
+            balance=transaction.get('balance'),
+            deposit=transaction.get('deposits'),
+            withdrawal=transaction.get('withdrawals'),
+            transaction_date=transaction.get('transaction_date'),
+            description=transaction.get('description')
+        )
+        data.append(BankStatementTransactionOut.from_create_to_model_transactions(create_data))
+    # remove existing data
+    (db.query(BankStatementTransactionsModel).
+     filter(BankStatementTransactionsModel.bank_statement_id == bank_statement.id).
      delete())
     db.add_all(data)
     db.commit()
