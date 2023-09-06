@@ -7,10 +7,6 @@ docker-stack.yml
 /exports
 __pycache__/
 sql_app.db
-<<<<<<< HEAD
-=======
-
 /bank_statement_reader/exports
 /bank_statement_reader/pdfs
 /bank_statement_reader/app/exports
->>>>>>> 00ed625 (added bank statement package)
