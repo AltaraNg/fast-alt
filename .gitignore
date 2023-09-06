@@ -1,6 +1,8 @@
 .vscode
+.idea
 .mypy_cache
 docker-stack.yml
 /venv
 .env
 /exports
+sql_app.db
