@@ -1,6 +1,22 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, Date
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date, ForeignKey, Text
 from config.database import Base
 from datetime import datetime
+import json
+from sqlalchemy.types import TypeDecorator, TEXT
+
+
+class JSONEncodedList(TypeDecorator):
+    impl = TEXT
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
 
 
 class BankStatement(Base):
@@ -18,7 +34,5 @@ class BankStatement(Base):
     end_date = Column(Date, nullable=True)
     created_at = Column(DateTime, nullable=True, default=datetime.now())
     updated_at = Column(DateTime, nullable=True, default=datetime.now())
-
-
-
-
+    customer_id = Column(Integer, nullable=True)
+    repayment_capability = Column(JSONEncodedList, nullable=True)
