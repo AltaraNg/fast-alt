@@ -67,7 +67,7 @@ def get_bank_statement(db: Session, bank_statement_id):
     return item
 
 
-def get_bank_statement_repayment_capability(db: Session, bank_statement_id, amount):
+def retrieve_bank_statement_repayment_capability(db: Session, bank_statement_id, amount):
     if config.db_connection == 'sqlite':
         items = (db.query(
             func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
@@ -102,7 +102,8 @@ def all_bank_statements(filter_query: BankStatementQueryParams, db: Session) -> 
     return paginate(query)
 
 
-def all_bank_statement_transactions(filter_query: BankStatementTransactionQueryParams, db: Session, bank_statement_id) -> Page[
+def all_bank_statement_transactions(filter_query: BankStatementTransactionQueryParams, db: Session,
+                                    bank_statement_id) -> Page[
     BankStatementTransactionOut]:
     get_bank_statement(db, bank_statement_id)
     query = db.query(BankStatementTransactionsModel)

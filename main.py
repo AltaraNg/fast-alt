@@ -15,7 +15,7 @@ from fastapi.encoders import jsonable_encoder
 from exceptions.NotFoundException import NotFoundException
 from services.FileService import FileService
 from services.BankStatementServiceCRUD import create_bank_statement, get_bank_statement, all_bank_statements, \
-    sync_with_end_of_day_transactions, bank_statement_exists, get_bank_statement_repayment_capability, \
+    sync_with_end_of_day_transactions, bank_statement_exists, retrieve_bank_statement_repayment_capability, \
     sync_with_all_transactions, all_bank_statement_transactions
 from services.MailService import MailService
 from fastapi_pagination import add_pagination, Page
@@ -209,7 +209,7 @@ def show(bank_statement_id: int = Path(title="The ID of the bank statement to ge
 def get_bank_statement_repayment_capability(bank_statement_id: int = Path(title="The ID of the bank statement to filter by"),
          amount: float = Path(title="The amount of repayment"),
          db: Session = Depends(get_db)):
-    bank_statement = get_bank_statement_repayment_capability(db, bank_statement_id, amount)
+    bank_statement = retrieve_bank_statement_repayment_capability(db, bank_statement_id, amount)
     return JSONResponse(
         status_code=200,
         content={
