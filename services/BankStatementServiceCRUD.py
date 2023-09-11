@@ -59,7 +59,7 @@ def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate)
         raise e
 
 
-def get_bank_statement(db: Session, bank_statement_id):
+def get_bank_statement(db: Session, bank_statement_id) -> BankStatement:
     item = (db.query(BankStatement).options(joinedload(BankStatement.bankStatementDayEndTransactions))
             .filter(BankStatement.id == bank_statement_id).first())
     if item is None:
@@ -68,6 +68,8 @@ def get_bank_statement(db: Session, bank_statement_id):
 
 
 def retrieve_bank_statement_repayment_capability(db: Session, bank_statement_id, amount):
+    bank_statement = get_bank_statement(db, bank_statement_id)
+    date_ranges = generate_date_range(bank_statement.start_date, bank_statement.end_date);
     if config.db_connection == 'sqlite':
         items = (db.query(
             func.STRFTIME("%m-%Y", BankStatementDayEndTransactions.transaction_date).label("month"),
@@ -83,16 +85,46 @@ def retrieve_bank_statement_repayment_capability(db: Session, bank_statement_id,
         ).filter(BankStatementDayEndTransactions.balance >= amount,
                  BankStatementDayEndTransactions.bank_statement_id == bank_statement_id)
                  .group_by(
-            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date, "%m-%Y")).all())
+            func.DATE_FORMAT(BankStatementDayEndTransactions.transaction_date, "%m-%Y"))
+                 .order_by(desc('month'))
+                 .all())
     result = []
     for index, item in enumerate(items):
-        print(item)
         result.append({
             "month_name": datetime.strptime(item.month, "%m-%Y").strftime('%B'),
+            "month_year": item.month,
             "count": item.count_no,
-            f"Month {index + 1}": item.count_no
         })
-    return result
+        date_ranges = [date_range_item for date_range_item in date_ranges if
+                       date_range_item["month_year"].lower() != item.month]
+    final_result = result + date_ranges
+    final_result = sorted(final_result, key=lambda x: x['month_year'])
+    return final_result
+
+
+def merge_dates(generated_date_ranges, actual_actual_date):
+    print(generated_date_ranges, actual_actual_date)
+
+
+def generate_date_range(start_date, end_date):
+    current_date = start_date
+    date_format = "%m-%Y"
+    date_ranges = []
+    while current_date <= end_date:
+        formatted_date = current_date.strftime(date_format)
+        # Increment to the next month
+        if current_date.month == 12:
+            current_date = current_date.replace(year=current_date.year + 1, month=1)
+        else:
+            current_date = current_date.replace(month=current_date.month + 1)
+        date_ranges.append(
+            {
+                "month_name": datetime.strptime(formatted_date, "%m-%Y").strftime('%B'),
+                "month_year": formatted_date,
+                "count": 0,
+            }
+        )
+    return date_ranges
 
 
 def all_bank_statements(filter_query: BankStatementQueryParams, db: Session) -> Page[BankStatementSchema]:
