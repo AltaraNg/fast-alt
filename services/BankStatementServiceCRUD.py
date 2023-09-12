@@ -103,6 +103,7 @@ def retrieve_bank_statement_repayment_capability(db: Session, bank_statement_id,
     return final_result
 
 
+
 def generate_date_range(start_date, end_date):
     """
     Generate a list of dictionaries representing date ranges between 'start_date' and 'end_date'.
