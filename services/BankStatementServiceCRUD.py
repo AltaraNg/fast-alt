@@ -34,6 +34,7 @@ def create_bank_statement(db: Session, bank_statement_data: BankStatementCreate)
 
         db_bank_statement = BankStatement(
             customer_id=bank_statement_data.customer_id,
+            bank_choice=bank_statement_data.bank_choice,
             repayment_capability=bank_statement_data.repayment_capability,
             account_name=bank_statement_data.account_name,
             account_number=bank_statement_data.account_number,

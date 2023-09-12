@@ -78,10 +78,12 @@ class BankStatementTransactionQueryParams:
                     between(BankStatementTransactionsModel.deposit, self.min_deposit,
                             self.max_deposit))
         if self.max_withdrawal and self.min_withdrawal:
-            if self.max_withdrawal >= self.min_withdrawal:
+            if float(self.max_withdrawal) >= float(self.min_withdrawal):
+                print(self.min_withdrawal)
+                print(self.max_withdrawal)
                 query = query.filter(
-                    between(BankStatementTransactionsModel.withdrawal, self.min_withdrawal,
-                            self.max_withdrawal))
+                    between(BankStatementTransactionsModel.withdrawal, float(self.min_withdrawal),
+                            float(self.max_withdrawal)))
         if self.transaction_from_date:
             self.transaction_from_date = datetime.now() if not self.transaction_from_date else datetime.strptime(
                 self.transaction_from_date, "%Y-%m-%d")
