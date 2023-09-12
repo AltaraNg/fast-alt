@@ -124,6 +124,7 @@ class BankStatementExecutor:
             last_transaction_per_day.columns = last_transaction_per_day.columns.str.replace(' ', '_')
             response = BankStatementFinalResultResponse(
                 selected_bank_name=bank_statement.bank_name,
+                choice=choice,
                 min_salary=bank_statement.min_salary,
                 max_salary=bank_statement.max_salary,
                 period=result.get('period'),

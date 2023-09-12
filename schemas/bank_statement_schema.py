@@ -57,7 +57,6 @@ class BankStatement(BankStatementBase):
             id=bank_statement.id,
             customer_id=bank_statement.customer_id,
             bank_choice=bank_statement.bank_choice,
-            bank_choice_label=BankStatement.get_choice_label(bank_statement.bank_choice),
             account_name=bank_statement.account_name,
             account_number=bank_statement.account_number,
             opening_balance=bank_statement.opening_balance,
@@ -80,6 +79,8 @@ class BankStatement(BankStatementBase):
                          bank_statement_excel_response: dict | None) -> BankStatementCreate:
         return BankStatementCreate(
             customer_id=customer_id,
+            bank_choice=result.choice,
+            bank_choice_label=result.selected_bank_name,
             account_name=result.account_name,
             account_number=result.account_number,
             opening_balance=result.opening_balance,

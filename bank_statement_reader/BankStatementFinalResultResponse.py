@@ -3,6 +3,7 @@ from typing import Dict
 
 class BankStatementFinalResultResponse:
     def __init__(self,
+                 choice: int,
                  period: Dict[str, str | None],
                  account_name: str | None, account_number: str | None,
                  total_deposits: float | None, total_withdrawals: float | None,
@@ -14,6 +15,7 @@ class BankStatementFinalResultResponse:
                  last_transaction_per_day: list[dict] = None,
                  transactions: list[dict] = None,
                  ):
+        self.choice = choice
         self.account_number = account_number
         self.excel_file_path = excel_file_path
         self.salary_excel_file_path = salary_excel_file_path
