@@ -20,7 +20,7 @@ class FirstBankStatementTest(unittest.TestCase):
     def setUp(cls) -> None:
         path = os.path.join(HERE, '../bank_statement_reader/pdfs/firstbank/first_mobile_version.pdf')
         cls.path = path
-        cls.path_v2 = os.path.join(HERE, '../pdfs/firstbank/first_bank_version.pdf')
+        cls.path_v2 = os.path.join(HERE, '../bank_statement_reader/pdfs/firstbank/first_bank_version.pdf')
         cls.bank_statement = FirstBankStatement(pdf_directory=path, min_salary=MIN_SALARY,
                                                 max_salary=MAX_SALARY, password="81054")
         # cls.reader = pdfplumber.open(path_or_fp=path, password="81054")
