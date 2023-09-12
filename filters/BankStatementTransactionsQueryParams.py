@@ -79,8 +79,6 @@ class BankStatementTransactionQueryParams:
                             self.max_deposit))
         if self.max_withdrawal and self.min_withdrawal:
             if float(self.max_withdrawal) >= float(self.min_withdrawal):
-                print(self.min_withdrawal)
-                print(self.max_withdrawal)
                 query = query.filter(
                     between(BankStatementTransactionsModel.withdrawal, float(self.min_withdrawal),
                             float(self.max_withdrawal)))

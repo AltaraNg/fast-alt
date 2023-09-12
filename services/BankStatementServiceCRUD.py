@@ -103,11 +103,38 @@ def retrieve_bank_statement_repayment_capability(db: Session, bank_statement_id,
     return final_result
 
 
-def merge_dates(generated_date_ranges, actual_actual_date):
-    print(generated_date_ranges, actual_actual_date)
-
 
 def generate_date_range(start_date, end_date):
+
+    """
+    Generate a list of dictionaries representing date ranges between 'start_date' and 'end_date'.
+
+    This function takes two date objects, 'start_date' and 'end_date', and generates a list of dictionaries
+    representing date ranges from 'start_date' to 'end_date'. Each dictionary includes the following information:
+
+    - 'month_name': The name of the month in the format 'January', 'February', etc.
+    - 'month_year': The month and year in the format 'MM-YYYY'.
+    - 'count': An initial count set to 0 for each date range.
+
+    The function increments the date on a monthly basis and includes each month in the output list until
+    'end_date' is reached.
+
+    Parameters:
+    - start_date (datetime.date): The start date of the date range.
+    - end_date (datetime.date): The end date of the date range.
+
+    Returns:
+    list: A list of dictionaries representing date ranges.
+
+    Example:
+    >>> from datetime import date
+    >>> generate_date_range(date(2023, 1, 1), date(2023, 3, 31))
+    [
+        {'month_name': 'January', 'month_year': '01-2023', 'count': 0},
+        {'month_name': 'February', 'month_year': '02-2023', 'count': 0},
+        {'month_name': 'March', 'month_year': '03-2023', 'count': 0}
+    ]
+    """
     current_date = start_date
     date_format = "%m-%Y"
     date_ranges = []
