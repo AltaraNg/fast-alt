@@ -94,6 +94,7 @@ class BankStatementExecutor:
             reader, status, message = bank_statement.get_pdf_reader()
             table_headers = bank_statement.get_transactions_table_headers(reader)
             salary_df = bank_statement.predict_salary_income(result.get('dataframe'), table_headers)
+
             predicted_salary_average = bank_statement.get_predicted_salary_average(salary_df)
             last_transaction_per_day = bank_statement.last_transaction_per_day(result.get('dataframe'))
 
