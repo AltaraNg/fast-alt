@@ -34,16 +34,16 @@ class SterlingBankStatement(BankStatementReport):
         return table_dictionary
 
     def get_total_withdrawal(self, _formatted_summary_table) -> float:
-        return _formatted_summary_table['total_debit']
+        return  self.convert_to_money(_formatted_summary_table['total_debit'])
 
     def get_total_deposit(self, _formatted_summary_table) -> float:
-        return _formatted_summary_table['total_credit']
+        return  self.convert_to_money(_formatted_summary_table['total_credit'])
 
     def get_opening_balance(self, _formatted_summary_table):
-        return _formatted_summary_table['opening_balance']
+        return self.convert_to_money(_formatted_summary_table['opening_balance'])
 
     def get_closing_balance(self, _formatted_summary_table):
-        return _formatted_summary_table['closing_balance']
+        return  self.convert_to_money(_formatted_summary_table['closing_balance'])
 
     def get_account_number(self, text):
         pattern = r"(\d{10,12})\s+Branch Name"
