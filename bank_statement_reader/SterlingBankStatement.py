@@ -86,8 +86,6 @@ class SterlingBankStatement(BankStatementReport):
         return self.get_transactions_table_header_mapping().values()
 
     def get_transactions_table_rows(self, reader, page=0):
-        date_pattern = r'\d{1,2}-([A-Z]|[a-z]){3}-\d{4}'
-        money_pattern = r'\b\d{1,3}(?:,\d{3})*(?:\.\d{2})?\b'
         if page == 0:
             table = reader.pages[page].extract_tables()[1]
             rows_without_header = table[1:]
@@ -176,6 +174,5 @@ class SterlingBankStatement(BankStatementReport):
                 row['Deposits'],
                 row['Balance'],
             ])
-        # salary_df = pd.DataFrame(potential_salary, columns=table_headers)
         formatted_salary_df = self.format_dataframe_columns(table_headers, potential_salary)
         return formatted_salary_df

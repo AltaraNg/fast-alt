@@ -73,10 +73,10 @@ class BankStatementTransactionQueryParams:
         if self.description:
             query = query.filter(BankStatementTransactionsModel.description.ilike(f"%{self.description}%"))
         if self.max_deposit and self.min_deposit:
-            if self.max_deposit >= self.min_deposit:
+            if float(self.max_deposit) >= float(self.min_deposit):
                 query = query.filter(
-                    between(BankStatementTransactionsModel.deposit, self.min_deposit,
-                            self.max_deposit))
+                    between(BankStatementTransactionsModel.deposit, float(self.min_deposit),
+                            float(self.max_deposit)))
         if self.max_withdrawal and self.min_withdrawal:
             if float(self.max_withdrawal) >= float(self.min_withdrawal):
                 query = query.filter(
