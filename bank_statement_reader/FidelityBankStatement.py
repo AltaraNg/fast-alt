@@ -9,7 +9,7 @@ class FidelityBankStatement(BankStatementReport):
 
     def __init__(self, pdf_directory, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "pdfs/fidelity/fidelity.pdf"
+            pdf_directory = "bank_statement_reader/pdfs/fidelity/fidelity.pdf"
         super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
                          bank_name='fidelity')
 
