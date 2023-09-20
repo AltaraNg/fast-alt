@@ -66,7 +66,7 @@ class SterlingBankStatement(BankStatementReport):
             if account_name is not None:
                 # Split the string by spaces
                 words = account_name.split()
-                # Take the first 3 words and join them back into a single string
+                # Take the last 3 words and join them back into a single string
                 account_name = ' '.join(words[-3:])
             return account_name
         else:
