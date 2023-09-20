@@ -9,7 +9,7 @@ class FcmbBankStatement(BankStatementReport):
 
     def __init__(self, pdf_directory, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "pdfs/fcmb/fcmb_version_one-1.pdf"
+            pdf_directory = "bank_statement_reader/pdfs/fcmb/fcmb_version_one-1.pdf"
         super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
                          bank_name='fcmb')
 

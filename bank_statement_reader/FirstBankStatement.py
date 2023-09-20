@@ -9,7 +9,7 @@ class FirstBankStatement(BankStatementReport):
 
     def __init__(self, pdf_directory, password, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "pdfs/firstbank/first_bank_version.pdf"
+            pdf_directory = "bank_statement_reader/pdfs/firstbank/first_bank_version.pdf"
             # pdf_directory = "pdfs/firstbank/first_mobile_version.pdf"
             password = "34932"
         super().__init__(password=password, pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,

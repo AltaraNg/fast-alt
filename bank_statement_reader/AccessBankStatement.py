@@ -10,8 +10,8 @@ class AccessBankStatement(BankStatementReport):
 
     def __init__(self, pdf_directory, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "pdfs/access/access_version_one.pdf"  # version one
-            # pdf_directory = "pdfs/access/access_version_two.pdf"  # version two
+            pdf_directory = "bank_statement_reader/pdfs/access/access_version_one.pdf"  # version one
+            # pdf_directory = "bank_statement_reader/pdfs/access/access_version_two.pdf"  # version two
         self.pdf_directory = pdf_directory
         super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
                          bank_name='access')

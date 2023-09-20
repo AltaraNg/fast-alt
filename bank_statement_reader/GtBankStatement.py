@@ -7,7 +7,7 @@ class GtBankStatement(BankStatementReport):
 
     def __init__(self, pdf_directory, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "pdfs/gt/gt_version_one-2.pdf"
+            pdf_directory = "bank_statement_reader/pdfs/gt/gt_version_one-2.pdf"
         super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
                          bank_name='gt')
 

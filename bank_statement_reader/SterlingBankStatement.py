@@ -7,10 +7,11 @@ from bank_statement_reader.BaseBankStatementReport import BankStatementReport
 
 class SterlingBankStatement(BankStatementReport):
 
-    def __init__(self, pdf_directory):
+    def __init__(self, pdf_directory, min_salary, max_salary):
         if pdf_directory is None or pdf_directory == '':
-            pdf_directory = "../pdfs/sterling/sterling.pdf"
-        super().__init__(pdf_directory=pdf_directory, bank_name='sterling')
+            pdf_directory = "bank_statement_reader/pdfs/sterling/sterling.pdf"
+        super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
+                         bank_name='sterling')
 
     def format_account_summary_table(self, reader, table_index=0, page=0):
         # get first table in first page
@@ -32,26 +33,50 @@ class SterlingBankStatement(BankStatementReport):
 
         return table_dictionary
 
-    def get_account_number(self, _formatted_summary_table):
-        return _formatted_summary_table['account_number']
+    def get_total_withdrawal(self, _formatted_summary_table) -> float:
+        return  self.convert_to_money(_formatted_summary_table['total_debit'])
 
-    def get_account_name(self, _formatted_summary_table):
-        return _formatted_summary_table['customer_name']
+    def get_total_deposit(self, _formatted_summary_table) -> float:
+        return  self.convert_to_money(_formatted_summary_table['total_credit'])
 
     def get_opening_balance(self, _formatted_summary_table):
-        return _formatted_summary_table['opening_balance']
+        return self.convert_to_money(_formatted_summary_table['opening_balance'])
 
     def get_closing_balance(self, _formatted_summary_table):
-        return _formatted_summary_table['closing_balance']
+        return  self.convert_to_money(_formatted_summary_table['closing_balance'])
 
-    def get_statement_period(self, _formatted_summary_table):
-        return {'from_date': _formatted_summary_table['start_date'], 'to_date': _formatted_summary_table['end_date']}
+    def get_account_number(self, text):
+        pattern = r"(\d{10,12})\s+Branch Name"
+        match = re.search(pattern, text)
+        if match:
+            account_number = match.group(1)
+            return account_number
+
+        else:
+            return None
+
+    def get_account_name(self, text: str | dict = None) -> str | None:
+        if text is None:
+            return None
+        text = text.replace(',', '')
+        pattern = r"\s*[:.]?\s*([a-zA-Z\s]+)Account\s+Type"
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            account_name = match.group(1)
+            if account_name is not None:
+                # Split the string by spaces
+                words = account_name.split()
+                # Take the last 3 words and join them back into a single string
+                account_name = ' '.join(words[-3:])
+            return account_name
+        else:
+            return None
 
     def get_transactions_table_header_mapping(self):
         return {
-            'txn_date': 'Txn Date',
-            'val_date': 'Val Date',
-            'remarks': 'Remarks',
+            'trans_date': 'Trans Date',
+            'narration': 'Narration',
+            'value_date': 'Value Date',
             'debit': 'Debit',
             'credit': 'Credit',
             'balance': 'Balance'
@@ -61,62 +86,25 @@ class SterlingBankStatement(BankStatementReport):
         return self.get_transactions_table_header_mapping().values()
 
     def get_transactions_table_rows(self, reader, page=0):
-        date_pattern = r'\d{1,2}-([A-Z]|[a-z]){3}-\d{4}'
-        money_pattern = r'\b\d{1,3}(?:,\d{3})*(?:\.\d{2})?\b'
         if page == 0:
-            table = reader.pages[page].extract_tables()[4]
+            table = reader.pages[page].extract_tables()[1]
             rows_without_header = table[1:]
         else:
-            table = reader.pages[page].extract_tables()[0]
+            table = reader.pages[page].extract_tables()[1]
             rows_without_header = table[0:]
+
         modified_rows = []
         # Remove None
         for index, row in enumerate(rows_without_header):
-            transaction_date = None
-            value_date = None
-            credit_or_debit = None
-            balance = None
-            remark = None
+            if len(row) > 5:
+                transaction_date = row[0]
+                narration = row[1]
+                value_date = row[2]
+                debit = row[3]
+                credit = row[4]
+                balance = row[5]
+                modified_rows.append([transaction_date, narration, value_date, debit, credit, balance])
 
-            if balance is not None:
-                continue
-            for item in row:
-                if item is not None and re.match(date_pattern, item):
-                    if transaction_date is None:
-                        transaction_date = item
-                    else:
-                        value_date = item
-                elif item is not None and re.match(money_pattern, item):
-                    if credit_or_debit is None:
-                        credit_or_debit = item
-                    else:
-                        balance = item
-                elif item is not None and item.strip() != '-' and item != '' and len(item) >= 5 and re.match(
-                        money_pattern, item) is None and re.match(date_pattern, item) is None:
-                    remark = item
-            if transaction_date is None or value_date is None or credit_or_debit is None or balance is None:
-                continue
-            modified_rows.append([transaction_date, value_date, remark, credit_or_debit, credit_or_debit, balance])
-
-        for index, row in enumerate(modified_rows):
-            # row[5] is balance column
-            # row[4] is credit column
-            # row[3] is a debit column
-            current_row = modified_rows[index]
-            previous_row = modified_rows[index - 1]
-            current_row_balance = current_row[5]
-            previous_row_balance = previous_row[5]
-
-            if current_row[2].find('Opening Balance') != -1 and page == 0:
-                current_row_balance = row[3]
-                previous_row_balance = row[3]
-
-            current_row_balance = float(current_row_balance.replace(',', ''))
-            previous_row_balance = float(previous_row_balance.replace(',', ''))
-            if current_row_balance > previous_row_balance:
-                row[3] = 0.00
-            else:
-                row[4] = 0.00
         return modified_rows
 
     def result(self):
@@ -130,19 +118,19 @@ class SterlingBankStatement(BankStatementReport):
         last_page_text = self.get_pdf_page_text(reader, num_pages - 1)
 
         cleaned_text = self.clean_text(text)
+
         formatted_summary_table = self.format_account_summary_table(reader)
-        total_withdrawals_extracted = self.get_total_withdrawal(last_page_text)
-        total_deposit_extracted = self.get_total_deposit(last_page_text)
-        account_name_extracted = self.get_account_name(formatted_summary_table)
-        statement_period_extracted = self.get_statement_period(formatted_summary_table)
-        account_number_extracted = self.get_account_number(formatted_summary_table)
+
+        total_withdrawals_extracted = self.get_total_withdrawal(formatted_summary_table)
+        total_deposit_extracted = self.get_total_deposit(formatted_summary_table)
+        account_name_extracted = self.get_account_name(cleaned_text)
+        statement_period_extracted = self.get_statement_period(cleaned_text)
+        account_number_extracted = self.get_account_number(cleaned_text)
         opening_balance_extracted = self.get_opening_balance(formatted_summary_table)
         closing_balance_extracted = self.get_closing_balance(formatted_summary_table)
 
         table_headers = self.get_transactions_table_headers(reader)
-
         trans_rows = []
-
         for page_num in range(num_pages):
             try:
                 # print(page_num)
@@ -151,18 +139,11 @@ class SterlingBankStatement(BankStatementReport):
             except Exception as e:
                 print(page_num)
                 print("from result", e)
-        if opening_balance_extracted is None:
-            opening_balance_extracted = trans_rows[0][5]
-
-        if closing_balance_extracted is None:
-            opening_balance_extracted = trans_rows[len(trans_rows) - 1][5]
 
         formatted_df = self.format_dataframe_columns(table_headers, table_rows=trans_rows)
 
-        print("--- Predicted Salary List ----")
-
         salary_df = self.predict_salary_income(formatted_df.copy(), table_headers)
-        print(salary_df)
+
         average_monthly_balance = self.get_average_monthly_balance(formatted_df.copy())
 
         return {
@@ -187,11 +168,11 @@ class SterlingBankStatement(BankStatementReport):
                 continue
             potential_salary.append([
                 row['Transaction Date'],
-                row['Value Date'],
                 row['Description'],
+                row['Value Date'],
                 row['Withdrawals'],
                 row['Deposits'],
                 row['Balance'],
             ])
-        salary_df = pd.DataFrame(potential_salary, columns=table_headers)
-        return salary_df
+        formatted_salary_df = self.format_dataframe_columns(table_headers, potential_salary)
+        return formatted_salary_df
