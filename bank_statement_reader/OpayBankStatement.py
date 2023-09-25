@@ -24,4 +24,14 @@ class OpayBankStatement(BankStatementReport):
 
     @abstractmethod
     def predict_salary_income(self, dataframe, table_headers):
-        pass
+        # Filter the DataFrame to get rows with values within the specified range
+        filtered_df = dataframe[(dataframe['Deposits'] >= self.min_salary) & (dataframe['Deposits'] <= self.max_salary)]
+        potential_salary = []
+        # Loop through each unique value and find occurrences
+        for index, row in filtered_df.iterrows():
+            unique = self.is_unique_amount_in_month_year(row, filtered_df)
+            if not unique:
+                continue
+            potential_salary.append([])
+        salary_df = self.format_dataframe_columns(table_headers, potential_salary)
+        return salary_df
