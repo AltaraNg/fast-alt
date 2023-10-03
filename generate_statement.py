@@ -5,7 +5,6 @@ import sys
 # Define a template for the class file
 CLASS_TEMPLATE = """\
 from bank_statement_reader.BaseBankStatementReport import BankStatementReport
-from abc import abstractmethod
 
 class {class_name}(BankStatementReport):
 
@@ -15,20 +14,21 @@ class {class_name}(BankStatementReport):
         super().__init__(password='', pdf_directory=pdf_directory, min_salary=min_salary, max_salary=max_salary,
                          bank_name='{bank_name}')
      
-     @abstractmethod
      def get_transactions_table_rows(self, reader, page):
         pass
 
-     @abstractmethod
      def get_transactions_table_header_mapping(self):
         pass
         
-        
-     @abstractmethod
      def result(self):
-        pass
+        reader, status, message = self.get_pdf_reader()
+        print(message)
+        if status == 0:
+            raise Exception("Reading of file failed")
+        num_pages = len(reader.pages)
+        text = self.get_pdf_page_text(reader)
+        cleaned_text = self.clean_text(text)
         
-     @abstractmethod
      def predict_salary_income(self, dataframe, table_headers):
         # Filter the DataFrame to get rows with values within the specified range
         filtered_df = dataframe[(dataframe['Deposits'] >= self.min_salary) & (dataframe['Deposits'] <= self.max_salary)]

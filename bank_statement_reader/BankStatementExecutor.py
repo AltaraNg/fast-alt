@@ -8,6 +8,7 @@ from bank_statement_reader.GtBankStatement import GtBankStatement
 from bank_statement_reader.SterlingBankStatement import SterlingBankStatement
 from bank_statement_reader.UBABankStatement import UBABankStatement
 from bank_statement_reader.ZenithBankStatement import ZenithBankStatement
+from bank_statement_reader.OpayBankStatement import OpayBankStatement
 from bank_statement_reader.BankStatementFinalResultResponse import BankStatementFinalResultResponse
 from bank_statement_reader.exceptions.InvalidBankStatementChoice import InvalidBankStatementChoice
 from bank_statement_reader.exceptions.BankStatementProcessingFailed import BankStatementProcessingFailed
@@ -27,7 +28,8 @@ class BankStatementExecutor:
         5: "GT",
         6: "FCMB",
         7: "Fidelity",
-        8: "Sterling"
+        8: "Sterling",
+        9: "Opay"
         # Add more bank statements with corresponding numbers here
     }
 
@@ -87,6 +89,9 @@ class BankStatementExecutor:
                                                        max_salary=max_salary)
             elif choice == 8:
                 bank_statement = SterlingBankStatement(pdf_directory=pdf_file, min_salary=min_salary,
+                                                       max_salary=max_salary)
+            elif choice == 9:
+                bank_statement = OpayBankStatement(pdf_directory=pdf_file, min_salary=min_salary,
                                                        max_salary=max_salary)
             self.bank_statement_report_instance = bank_statement
             result = bank_statement.result()
