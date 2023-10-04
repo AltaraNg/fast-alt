@@ -1,6 +1,5 @@
 import re
 
-import pandas as pd
 
 from bank_statement_reader.BaseBankStatementReport import BankStatementReport
 
