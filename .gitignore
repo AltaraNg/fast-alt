@@ -10,4 +10,3 @@ sql_app.db
 /bank_statement_reader/exports
 /bank_statement_reader/pdfs
 /bank_statement_reader/app/exports
-Makefile
