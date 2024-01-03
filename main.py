@@ -26,6 +26,9 @@ import os
 from fastapi.exceptions import RequestValidationError, ValidationException
 from filters.BankStatementQueryParams import BankStatementQueryParams
 from filters.BankStatementTransactionsQueryParams import BankStatementTransactionQueryParams
+import requests
+import tempfile
+import shutil
 
 Page = Page.with_custom_options(
     size=Query(15, ge=1, le=100),
@@ -93,15 +96,28 @@ def get_bank_statement_choices() -> JSONResponse:
 
 @app.post("/bank-statements", summary="Upload bank statement for processing")
 async def store(
+         bank_statement_choice: Annotated[int, Form()],
         customer_id: Annotated[int, Form()],
-        bank_statement_pdf: Annotated[UploadFile, File(...)],
-        bank_statement_choice: Annotated[int, Form()],
+        bank_statement_pdf: Annotated[UploadFile, File(...)] = None,
+        bank_statement_pdf_url: Annotated[str, Form()] = None, 
         min_salary: Annotated[float, Form()] = 100000,
         max_salary: Annotated[float, Form()] = 150000,
         password: Annotated[str, Form()] = '',
+        # bank_statement_pdf: UploadFile =  File(None),
         background_tasks: BackgroundTasks = BackgroundTasks,
         db: Session = Depends(get_db),
 ) -> JSONResponse:
+    if bank_statement_pdf and bank_statement_pdf_url:
+        raise HTTPException(status_code=400, detail="Only provide either bank statement pdf or bank statement pdf url")
+    
+    if bank_statement_pdf_url:
+        try:
+            uploaded_file =  download_file(bank_statement_pdf_url)
+            bank_statement_pdf = uploaded_file
+        except Exception as e:
+            print(e)
+            raise e
+
     try:
         executor = BankStatementExecutor()
 
@@ -143,16 +159,19 @@ async def store(
         if config.app_env != 'local':
             bank_statement_name = executor.BANK_STATEMENTS_CHOICES.get(int(bank_statement_choice))
             pdf_file_path = create_upload_file(bank_statement_pdf)
+            bank_statement_pdf_response = FileService.upload_file(pdf_file_path)
+            print(bank_statement_pdf_response)
             background_tasks.add_task(clean_exports, [pdf_file_path])
             await MailService.send_email_async(
                 subject="Bank Statement Processing Failed",
-                email_to="tadewuyi@altaracredit.com",
+                email_to=config.maintainer,
                 body={
                     "actual_error": str(e),
                     "bank_statement_name": bank_statement_name,
                     "min_salary": min_salary,
                     "max_salary": max_salary,
-                    "file_name": bank_statement_pdf.filename
+                    "file_name": bank_statement_pdf.filename,
+                    "file_url": bank_statement_pdf_response.get('file_url', None),
                 },
                 template="bank_statement_processing_failed",
                 attachment=pdf_file_path
@@ -164,6 +183,7 @@ async def store(
                 "message": str(e),
             }
         )
+
 
 
 @app.get("/bank-statements", summary="Get paginated processed bank statements")
@@ -245,3 +265,23 @@ def create_upload_file(uploaded_file: UploadFile = File(...)):
     path = folder_location + "/" + uploaded_file.filename
     print(f"file {uploaded_file.filename} saved at {path}")
     return FileService.get_export_file_path(path)
+
+
+def download_file(file_url: str):
+    upload_file = None
+    try:
+        response = requests.get(file_url)
+        file_content = response.content
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail=f"Failed to fetch file from provided url: {file_url}")
+    temp_file= tempfile.SpooledTemporaryFile()
+   
+    temp_file.write(file_content)
+    try:
+        temp_file.seek(0)
+        upload_file = UploadFile(temp_file, filename=file_url.split("/")[-1])
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail=f"Error occurred creating Upload File: {str(e)}")
+    return upload_file
