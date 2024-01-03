@@ -37,6 +37,8 @@ class ConfigService(BaseSettings):
     aws_default_region: str
     aws_bucket: str
     aws_url: str
+    
+    maintainer: str
 
     base_dir: str = BASE_DIR
     template_dir: str = BASE_DIR + "/templates"

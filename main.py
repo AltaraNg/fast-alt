@@ -164,7 +164,7 @@ async def store(
             background_tasks.add_task(clean_exports, [pdf_file_path])
             await MailService.send_email_async(
                 subject="Bank Statement Processing Failed",
-                email_to="tadewuyi@altaracredit.com",
+                email_to=config.maintainer,
                 body={
                     "actual_error": str(e),
                     "bank_statement_name": bank_statement_name,
